@@ -2,6 +2,7 @@
 
 > **Projet personnel de Benjamin**, copie de Cockpit Audibene (v1.0.34) dans le dépôt privé `Benjamin-Mag/cockpit-benjamin`. Nom « Cockpit Benjamin », icône orange, versions 2.x, zip `cockpit-benjamin.zip`, pas de site. Il garde la page **Ventes**, retirée de la version d'équipe.
 > - `upstream` = `Benjamin-Mag/cockpit-audibene` (version de l'équipe). **Les corrections et nouveautés d'upstream sont reportées ici** par le chef d'orchestre (`git fetch upstream && git merge upstream/main`, en gardant les Ventes et le nom). **Rien ne remonte jamais d'ici vers upstream** : ne jamais pousser sur upstream depuis ce dossier.
+> - **Commits d'upstream à ne pas appliquer ici** (retrait des Ventes v1.0.35, docs d'équipe) : les marquer comme fusionnés sans les appliquer avec `git merge -s ours <commit>`, puis fusionner normalement la suite. Journal des reports : v1.0.35 marquée sans application le 2026-09-22.
 > - Tout ce qui suit décrit l'architecture commune aux deux projets.
 
 Extension Chrome/Edge (Manifest V3) : un panneau latéral à côté de Salesforce pour un conseiller audibene. Elle a remplacé cinq extensions et deux sites. Propriétaire : Benjamin Magnier (conseiller, non développeur — lui parler en français, sans jargon, et viser toujours **le moins de clics possible**).
