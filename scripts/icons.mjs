@@ -1,4 +1,4 @@
-// Génère public/icons/icon{16,48,128}.png (jauge blanche sur carré arrondi bleu #1B4F9B),
+// Génère public/icons/icon{16,48,128}.png (jauge blanche sur carré arrondi orange #E07A1F (Cockpit Benjamin)),
 // sans dépendance : encodeur PNG minimal + rendu par sur-échantillonnage.
 import { deflateSync } from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -32,7 +32,7 @@ const png = (w, h, rgba) => {
   ]);
 };
 
-const BG = [27, 79, 155];
+const BG = [224, 122, 31];
 const FG = [255, 255, 255];
 const deg = (a) => (a * Math.PI) / 180;
 
