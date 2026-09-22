@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { ContentRequest } from '../shared/messages';
 import type { ActionResult, Fiche, RecentPatient, SfContext } from '../shared/types';
-import { type Site, connectContext, ensureOrigin, subFrames, isExtension, loadRecent, onCommand, onRecentChanged, pushRecent, readFiche, runAction, sendToFrame, siteOf, watchActiveTab, writeClipboard } from './bridge';
+import { type Site, connectContext, ensureOrigin, subFrames, isExtension, loadRecent, onCommand, onRecentChanged, pushRecent, readFiche, readPartnerSearch, runAction, sendToFrame, siteOf, watchActiveTab, writeClipboard } from './bridge';
 import { Btn, Icon, type IconName, Toast, type ToastMsg } from './components/ui';
 import { type AppData, defaultData } from './model';
 import { type StorageState, authorize, chooseFolder, exportLegacy, initStorage, parseAny, save, useBrowserStorage } from './storage/data';
@@ -13,6 +13,7 @@ import { Commentaire } from './views/Commentaire';
 import { Header } from './views/Header';
 import { Mails } from './views/Mails';
 import { OrlFinder } from './views/OrlFinder';
+import { Partenaires } from './views/Partenaires';
 import { Reglages } from './views/Reglages';
 import { Ventes } from './views/Ventes';
 import { buildMailHtml } from '../shared/mail-html';
@@ -29,7 +30,7 @@ const TABS: { id: TabId; label: string; icon: IconName }[] = [
   { id: 'chat', label: 'Chat partenaire', icon: 'message' },
   { id: 'reglages', label: '', icon: 'settings' },
 ];
-type PageId = 'cockpit' | 'ventes';
+type PageId = 'cockpit' | 'partenaires' | 'ventes';
 const VERSION = isExtension ? chrome.runtime.getManifest().version : 'web';
 const RDV_NOTE = 'Rendez-vous Audibene';
 
@@ -315,6 +316,7 @@ export function App() {
   const pageSwitch = (
     <div class="pages">
       <button type="button" class={pageMode === 'cockpit' ? 'on' : ''} onClick={() => setPageMode('cockpit')}><Icon name="stetho" size={13} /> Cockpit</button>
+      <button type="button" class={pageMode === 'partenaires' ? 'on' : ''} onClick={() => setPageMode('partenaires')}><Icon name="building" size={13} /> Partenaires</button>
       <button type="button" class={pageMode === 'ventes' ? 'on' : ''} onClick={() => setPageMode('ventes')}><Icon name="coins" size={13} /> Ventes</button>
     </div>
   );
@@ -338,6 +340,18 @@ export function App() {
   // (les Ventes ont leur propre page, via le sélecteur du haut)
   const visibleTabs = TABS.filter((t) => !hidden.includes(t.id));
   const activeTab: TabId = hidden.includes(tab) ? visibleTabs[0].id : tab;
+
+  if (pageMode === 'partenaires') {
+    return (
+      <>
+        <div class="top">{pageSwitch}</div>
+        <main class="content">
+          <Partenaires key={recordKey} ficheKey={recordKey} surPiste={connected && ctx?.page === 'lead'} lire={() => (tabId == null ? Promise.reject(new Error("Pas d'onglet Salesforce.")) : readPartnerSearch(tabId))} />
+        </main>
+        <Toast toast={toast} />
+      </>
+    );
+  }
 
   return (
     <>
