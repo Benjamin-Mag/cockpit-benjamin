@@ -117,7 +117,13 @@ export function Ventes({ data, update, prefill, onImport, toast }: Props) {
               {sales.map((s, i) => (
                 <div key={i} class="tpl" style="cursor:default">
                   <span class="t" style="font-weight:400">{s.name}</span>
-                  <span class={['badge', s.cat === 2 ? 'sms' : ''].join(' ')}>CAT {s.cat}</span>
+                  <button type="button" class={['badge', 'badge-bouton', s.cat === 2 ? 'sms' : ''].join(' ')}
+                    title={`Vente en CAT ${s.cat} — cliquer pour passer en CAT ${s.cat === 1 ? 2 : 1}`}
+                    onClick={() => {
+                      const nouvelle = s.cat === 1 ? 2 : 1;
+                      update((d) => { const vente = d.ventes.sales[month]?.[i]; if (vente) vente.cat = nouvelle; });
+                      toast(`${s.name} : CAT ${s.cat} → CAT ${nouvelle}`, 'ok');
+                    }}>CAT {s.cat}</button>
                   {s.url && <a href={s.url} target="_blank" rel="noreferrer" title="Ouvrir dans Salesforce" style="color:var(--accent);display:inline-flex"><Icon name="send" size={13} /></a>}
                   <DeleteBtn title="Supprimer cette vente" onConfirm={() => { update((d) => { d.ventes.sales[month].splice(i, 1); }); toast(`Vente « ${s.name} » supprimée`, 'ok'); }} />
                 </div>

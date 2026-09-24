@@ -232,6 +232,10 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
 .tpl .t { flex: 1; font-weight: 500; font-size: 13px; }
 .badge { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); white-space: nowrap; }
 .badge.sms { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+/* Catégorie d'une vente : cliquable pour corriger une erreur (CAT 1 ⇄ CAT 2). */
+.badge-bouton { cursor: pointer; font-family: inherit; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.badge-bouton:hover { box-shadow: 0 0 0 3px var(--accent-soft); }
+.badge-bouton:active { transform: scale(0.94); }
 .preview .subj { font-weight: 600; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed var(--border); }
 .preview.subj-line { font-weight: 600; padding: 7px 12px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
