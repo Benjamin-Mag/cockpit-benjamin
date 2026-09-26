@@ -26,7 +26,10 @@ npm run dev          # aperçu du panneau dans un onglet (mode web, sans Salesfo
 npm run build:site   # dist-site/ = page d'installation + version web
 npm run zip          # release/cockpit-audibene.zip
 npx tsc --noEmit     # vérification des types (à faire avant tout commit)
+npm test             # banc d'essai Playwright : le vrai panneau dans un faux navigateur (Salesforce, Doctolib, Acuitis simulés) — voir tests/LISEZMOI.md
 ```
+
+**Banc d'essai (depuis la v1.0.43)** : `tests/e2e/*.spec.ts`, faux navigateur `tests/e2e/faux-navigateur.js`, aides `tests/e2e/outils.ts`. Il teste le panneau, **pas** le script de page Salesforce. Données 100 % fictives (règle n°4). Plusieurs worktrees en même temps : donner à chacun son `PW_PORT`. Si le Chromium de Playwright n'est pas installé (`npx playwright install chromium`), utiliser le Chrome du poste : `CHROMIUM_PATH="C:/Program Files/Google/Chrome/Application/chrome.exe" npm test`. Tout correctif de comportement arrive avec un test qui échoue avant et passe après.
 
 Tester dans un vrai Salesforce : `edge://extensions` → ↻ sur la carte de l'extension, puis F5 sur l'onglet Salesforce si le script de page a changé (le panneau ré-injecte normalement tout seul un script périmé grâce à l'identifiant de build).
 
@@ -113,8 +116,13 @@ Toute fusion de données passe par `mergeData` / `mergeVentes` / `mergePartage` 
 1. `npx tsc --noEmit` puis `npm run build`.
 2. Monter `version` dans `public/manifest.json` et `npm pkg set version=X.Y.Z`.
 3. `main` est protégé : commit sur une branche `chore/vX.Y.Z`, `gh pr create`, `gh pr merge --squash --delete-branch`, puis `git checkout main && git pull`, `git tag vX.Y.Z && git push origin vX.Y.Z`.
-4. Vérifier `gh run list` : Release (zip) et Site (Pages) en succès.
-
+4. Vérifier `gh run list --repo Benjamin-Mag/cockpit-audibene` : Release (zip) en succès.
+5. **Copier la version chez Benjamin** : `cp -r dist/. ~/Downloads/cockpit-audibene/` (et `cockpit-benjamin`, `cockpit-essai` pour leurs dépôts) — il n'a plus qu'à faire ↻ dans `edge://extensions`.
+6. **Mettre le zip à disposition des collègues** : ce dépôt est **privé** depuis le 2026-09-26, donc `npm run zip` puis
+   `gh release create vX.Y.Z --repo Benjamin-Mag/cockpit-audibene-install release/cockpit-audibene.zip release/cockpit-audibene-X.Y.Z.zip`.
+   Le dépôt public `cockpit-audibene-install` (dossier `Projects/Page installation Cockpit`) ne contient **que** la page d'installation et les zips : jamais de code, jamais de journal.
+   Lien unique pour les collègues : https://benjamin-mag.github.io/cockpit-audibene-install/
+7. Reporter dans Cockpit Benjamin (`git fetch upstream && git merge upstream/main`, version 2.x) et remettre la branche `design/essai` au niveau si elle sert.
 ## Travailler en équipe
 - Un agent = une branche `feature/<chantier>` dans son propre worktree (`git worktree add`), jamais dans le dossier principal.
 - Avant de commencer : `git fetch && git rebase origin/main` ; petits commits ; `npx tsc --noEmit` vert.
