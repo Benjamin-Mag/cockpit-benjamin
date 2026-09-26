@@ -2,7 +2,7 @@
 
 > **Projet personnel de Benjamin**, copie de Cockpit Audibene (v1.0.34) dans le dépôt privé `Benjamin-Mag/cockpit-benjamin`. Nom « Cockpit Benjamin », icône orange, versions 2.x, zip `cockpit-benjamin.zip`, pas de site. Il garde la page **Ventes**, retirée de la version d'équipe.
 > - `upstream` = `Benjamin-Mag/cockpit-audibene` (version de l'équipe). **Les corrections et nouveautés d'upstream sont reportées ici** par le chef d'orchestre (`git fetch upstream && git merge upstream/main`, en gardant les Ventes et le nom). **Rien ne remonte jamais d'ici vers upstream** : ne jamais pousser sur upstream depuis ce dossier.
-> - **Commits d'upstream à ne pas appliquer ici** (retrait des Ventes v1.0.35, docs d'équipe) : les marquer comme fusionnés sans les appliquer avec `git merge -s ours <commit>`, puis fusionner normalement la suite. Journal des reports : v1.0.35 marquée sans application le 2026-09-22. v1.0.36 (Partner Search, page Partenaires) fusionnée normalement le 2026-09-22 → Cockpit Benjamin v2.0.1, sélecteur à trois pages Cockpit | Partenaires | Ventes.
+> - **Commits d'upstream à ne pas appliquer ici** (retrait des Ventes v1.0.35, docs d'équipe) : les marquer comme fusionnés sans les appliquer avec `git merge -s ours <commit>`, puis fusionner normalement la suite. Journal des reports : v1.0.35 marquée sans application le 2026-09-22. v1.0.36 (Partner Search, page Partenaires) fusionnée normalement le 2026-09-22 → Cockpit Benjamin v2.0.1, sélecteur à trois pages Cockpit | Partenaires | Ventes. v1.0.37 (créneaux Acuitis dans la page Partenaires) fusionnée le 2026-09-26 → Cockpit Benjamin v2.0.3 (conflits : seuls le nom et la version, gardés).
 > - Tout ce qui suit décrit l'architecture commune aux deux projets.
 
 Extension Chrome/Edge (Manifest V3) : un panneau latéral à côté de Salesforce pour un conseiller audibene. Elle a remplacé cinq extensions et deux sites. Propriétaire : Benjamin Magnier (conseiller, non développeur — lui parler en français, sans jargon, et viser toujours **le moins de clics possible**).
@@ -12,7 +12,7 @@ Extension Chrome/Edge (Manifest V3) : un panneau latéral à côté de Salesforc
 1. **`main` est réservé au chef d'orchestre** (la session « projets-b4 »). Tout autre agent travaille sur une branche, ouvre une Pull Request et envoie un rapport ; le chef d'orchestre relit, teste, merge et publie. Ne jamais pousser sur `main`, ne jamais créer de tag.
 2. **Ne jamais modifier les anciens repos** (`Générateur de mail`, `Suivi Ventes Primes`, `Colleur*`, `Extension Message Vocal`) : les collègues les utilisent encore. Lecture seule, comme référence.
 3. **Pas de `confirm()` / `alert()` / `prompt()`** : bloqués dans un panneau latéral. Utiliser `DeleteBtn` (deux temps) et les toasts.
-4. **Aucune donnée ne quitte le poste** : pas de télémétrie, pas d'appel réseau — seule exception : l'ORL Finder interroge Doctolib avec les coordonnées GPS du code postal du patient (jamais son nom). Les données vivent dans `chrome.storage.local` + `cockpit.json`.
+4. **Aucune donnée ne quitte le poste** : pas de télémétrie, pas d'appel réseau — seules exceptions : l'ORL Finder interroge Doctolib avec les coordonnées GPS du code postal du patient (jamais son nom), et la page Partenaires demande à Doctolib ou à rdv.acuitis.com les créneaux libres d'un partenaire (rien du patient n'est envoyé). Les données vivent dans `chrome.storage.local` + `cockpit.json`.
 5. Design : palette de l'ancien générateur (`--accent #1b4f9b`, fond `#eaf3fb`, Poppins), animations lentes et douces (≥ 280 ms), tout texte généré affiché dans un `EditablePreview`.
 6. TypeScript strict, pas de commentaires explicatifs inutiles, commits en français avec le trailer `Co-Authored-By` du modèle Claude utilisé.
 
@@ -46,7 +46,7 @@ src/content/salesforce/
 src/content/doctolib.ts, acuitis.ts, forms.ts   collage du patient dans les formulaires de RDV
 src/shared/                  messages.ts (protocole panneau ↔ page), types.ts, anamnese-catalog.ts (champs COSI), mail-html.ts
 src/panel.html + src/panel/
-  app.tsx                    état global, stockage, pont vers la page, pages Cockpit/Ventes, onglets adaptés à la fiche
+  app.tsx                    état global, stockage, pont vers la page, pages Cockpit/Partenaires/Ventes, onglets adaptés à la fiche
   bridge.ts                  chrome.tabs/scripting/webNavigation : envoi aux cadres, injection, fiches récentes, presse-papier, délais maximum
   brouillons.ts              saisies en cours gardées par fiche (useBrouillon), mémoire de session, ménage (onglets fermés 2 h, 30 fiches, 12 h)
   model.ts                   AppData (reglages, anamnese, chatPartenaire, templates, categories, ventes), variables, genre
@@ -55,7 +55,8 @@ src/panel.html + src/panel/
   views/                     Header, Anamnese (=COSI), Commentaire (=Anamnèse), Mails, ChatPartenaire, Ventes, Reglages, Setup
   views/OrlFinder.tsx        ORL Finder (Piste) : ORL Doctolib proches avec prochain créneau, TOP 3, message type
   views/Partenaires.tsx      page « Partenaires » (sélecteur du haut) : partenaires de Partner Search avec créneaux Doctolib
-  partenaires-sf.ts          classement des liens (Doctolib public / agenda Pro / autre site), choix des motifs, tri, cache 10 min par fiche
+  partenaires-sf.ts          classement des liens (Doctolib public / agenda Pro / magasin Acuitis / autre site), choix des motifs, tri, cache 10 min par fiche
+  acuitis.ts                 créneaux des magasins Acuitis (rdv.acuitis.com) : code magasin lu dans le lien, motifs = durées (30 min bilan auditif, 60 min 1er rendez-vous)
   orl-tri.ts                 tri (« Trier par ») et filtres rapides de l'ORL Finder : fonctions pures, aucun appel Doctolib
   doctolib.ts, geo.ts        appels Doctolib (recherche, créneaux, fiche praticien), via Doctolib Pro (session du conseiller) puis site public en secours, toujours exécutés dans un onglet du site (fetchViaTab) ; code postal → GPS (public/data/codes-postaux.json, script scripts/codes-postaux.mjs)
   components/ui.tsx          Btn, Chip, Seg, Field, DeleteBtn, EditablePreview, Toast, icônes
@@ -71,7 +72,7 @@ Le panneau envoie des `ContentRequest` (`src/shared/messages.ts`) via `chrome.ta
 - **Anamnèse** = texte intro + résumé Salesforce collé + signature, écrit dans « Remarques générales profil client » (`views/Commentaire.tsx`).
 - **Chat partenaire** = fil Chatter de l'Opportunité (`views/ChatPartenaire.tsx`).
 - **Message vocal** = commentaire « MV » dans Commentaires internes + « Piste non joignable ».
-- **Partenaires** = page à côté de Cockpit (sélecteur du haut, à la place des anciennes Ventes) : partenaires de la Piste lus dans Partner Search, créneaux Doctolib des partenaires qui ont une page publique (test auditif, première consultation avec puis sans ordonnance), agenda Doctolib Pro ou autre site en bouton, commentaire Partnersearch affiché (il dit quel motif prendre).
+- **Partenaires** = page du sélecteur du haut (ici : Cockpit | Partenaires | Ventes) : partenaires de la Piste lus dans Partner Search, créneaux Doctolib des partenaires qui ont une page publique (test auditif, première consultation avec puis sans ordonnance), créneaux Acuitis pour les magasins Acuitis (bilan auditif et 1er rendez-vous), agenda Doctolib Pro ou autre site en bouton, commentaire Partnersearch affiché (il dit quel motif prendre).
 - **Hearo** = utilitaire SMS de la barre du bas (app Canvas, libellé variable : Hearo / Nouveau message / Approbation en attente).
 - **ORL Finder** = onglet de la Piste : ORL proches du patient (Doctolib) avec créneau visible, tri créneau disponible → secteur 1 avant secteur 2 → créneau le plus tôt → distance (v1.0.33), « pas de téléphone = pas de ligne », TOP 3, message type audiométrie, itinéraire Google Maps. « Trier par » (pertinence / plus tôt / plus proche, mémorisé), puces cumulables et recherche par nom ou ville : tout se fait sur les résultats déjà chargés (v1.0.34).
 
