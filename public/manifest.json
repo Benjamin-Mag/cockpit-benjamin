@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Cockpit Benjamin",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "description": "Panneau latéral pour Salesforce : anamnèse, MV non joignable, commentaires, mails, prise de RDV et suivi des ventes — version personnelle de Benjamin.",
   "permissions": ["sidePanel", "scripting", "activeTab", "tabs", "storage", "clipboardRead", "clipboardWrite", "webNavigation"],
   "host_permissions": [
