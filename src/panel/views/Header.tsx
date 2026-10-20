@@ -15,9 +15,18 @@ interface Props {
   onMv: () => void;
   onRefresh: () => void;
   onPaste: (p: RecentPatient) => void;
-  onAddSale: (cat: 1 | 2) => void;
   onSms: () => void;
-  goTo: (tab: 'anamnese' | 'commentaire' | 'mails' | 'chat') => void;
+  /** Hors de l'écran Fiche : une seule ligne (nom, téléphone, MV), pour laisser la place au travail. */
+  compact: boolean;
+  /** Sur une Piste, dans COSI et Anamnèse : pas de carte du tout (demande de Benjamin, 01/10), mais l'état du patient dans l'en-tête (07/10). */
+  sansCarte?: boolean;
+  onReglages: () => void;
+  reglagesOuverts: boolean;
+  /** Cockpit Benjamin : l'écran Ventes s'ouvre par l'icône € à côté de la roue. */
+  onVentes: () => void;
+  ventesOuvertes: boolean;
+  /** Vente CAT 1 / CAT 2 de l'Opportunité ouverte, dans le mois courant (écran Fiche). */
+  onAddSale: (cat: 1 | 2) => void;
 }
 
 const civ = (g: 'M' | 'F' | null) => (g === 'F' ? 'Mme' : g === 'M' ? 'M.' : '');
@@ -26,19 +35,19 @@ const ago = (t: number) => {
   return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`;
 };
 
-export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan, onRevenir, onMv, onRefresh, onPaste, onAddSale, onSms, goTo }: Props) {
+export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan, onRevenir, onMv, onRefresh, onPaste, onSms, compact, sansCarte, onReglages, reglagesOuverts, onVentes, ventesOuvertes, onAddSale }: Props) {
   const page = ctx?.page ?? 'other';
   const onSf = site === 'salesforce' && !!ctx;
   const hasFiche = !!fiche && !!(fiche.prenom || fiche.nom);
   const siteLabel = site === 'salesforce' ? 'Salesforce' : site === 'doctolib' ? 'Doctolib' : site === 'acuitis' ? 'Acuitis' : site === 'grandaudition' ? 'Grand Audition' : 'en attente';
   const isForm = site === 'doctolib' || site === 'acuitis' || site === 'grandaudition';
   const last = recent[0];
-  // Sur une fiche Salesforce, le rond dit si le patient est lu (comme dans le nouveau design, v1.1.8) : vert, orange, rouge.
-  const etat = onSf && page !== 'other' ? (ficheState === 'loading' ? 'lecture' : hasFiche ? 'ok' : 'ko') : null;
+  // Sans carte, le rond dit si le patient est lu : sinon Doctolib proposerait le patient d'avant sans que rien ne se voie.
+  const etat = sansCarte && onSf ? (ficheState === 'loading' ? 'lecture' : hasFiche ? 'ok' : 'ko') : null;
   const etatTitre = etat === 'ok' ? `${civ(fiche!.genre)} ${fiche!.prenom} ${fiche!.nom}`.trim() + ' — patient chargé' : etat === 'lecture' ? 'Lecture du patient…' : 'Patient pas chargé : clique ↻ pour relire la fiche';
 
   return (
-    <div class="top">
+    <div class={['top', sansCarte && onSf ? 'trait' : ''].join(' ')}>
       <div class="brand">
         <span class="site" title={etat ? etatTitre : undefined}>
           <span class={['dot', onSf || isForm ? 'on' : '', etat ?? ''].join(' ')} role={etat ? 'status' : undefined} aria-label={etat ? etatTitre : undefined} />
@@ -50,9 +59,33 @@ export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan
             <Btn kind="ghost" icon="external" onClick={onRevenir} title="Revenir sur l'onglet Salesforce">Revenir</Btn>
           </>
         )}
+        <span class="grow" />
+        {etat && <Btn kind="ghost" icon="refresh" class="relire" title="Relire la fiche" onClick={onRefresh} busy={etat === 'lecture'} />}
+        <button type="button" class={['btn', ventesOuvertes ? 'soft' : 'ghost', 'icon', 'ventes-ico'].join(' ')} title="Ventes" aria-pressed={ventesOuvertes} onClick={onVentes}><Icon name="coins" /></button>
+        <button type="button" class={['btn', reglagesOuverts ? 'soft' : 'ghost', 'icon', 'roue'].join(' ')} title="Réglages" aria-pressed={reglagesOuverts} onClick={onReglages}><Icon name="settings" /></button>
       </div>
 
-      <div class="card">
+      {compact && onSf && !sansCarte && (
+        <div class="card fiche-mini">
+          <div class="stack" style="gap:1px;flex:1;min-width:0">
+            {ficheState === 'loading' && !hasFiche ? (
+              <><div class="skeleton" style="width:60%;height:14px" /><div class="skeleton" style="width:40%" /></>
+            ) : hasFiche ? (
+              <>
+                <div class="name">{civ(fiche!.genre)} {fiche!.prenom} {fiche!.nom} <span class="tag">{page === 'lead' ? 'Piste' : page === 'opportunity' ? 'Opportunité' : 'Fiche'}</span></div>
+                {fiche!.telephone && <span class="meta">{fiche!.telephone}</span>}
+              </>
+            ) : (
+              <span class="hint">{ficheState === 'error' ? 'Lecture impossible — recharge la page Salesforce.' : page === 'other' ? 'Pas de fiche patient sur cette page.' : 'Fiche vide — clique ↻ une fois la page chargée.'}</span>
+            )}
+          </div>
+          {page !== 'opportunity' && <Btn kind="soft" icon="phone-off" busy={busy === 'mv'} onClick={onMv} title="Message vocal → non joignable (écrit le commentaire MV, enregistre, puis « Piste non joignable »)">MV</Btn>}
+          {page === 'opportunity' && hasFiche && <Btn kind="soft" icon="phone" title="Ouvrir les SMS (Hearo) et chercher ce patient" onClick={onSms} busy={busy === 'sms'}>SMS</Btn>}
+          <Btn kind="ghost" icon="refresh" title="Relire la fiche" onClick={onRefresh} busy={ficheState === 'loading'} />
+        </div>
+      )}
+
+      {!compact && <div class="card">
         {site === 'none' && <div class="fiche"><span class="hint">Ouvre une fiche Salesforce, ou un formulaire de RDV Doctolib / Acuitis.</span></div>}
 
         {isForm && (
@@ -117,7 +150,7 @@ export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan
               )}
               <div class="row" style="gap:4px">
                 {page === 'opportunity' && hasFiche && (
-                  <Btn kind="soft" icon="message" title="Ouvrir les SMS (Hearo) et chercher ce patient" onClick={onSms} busy={busy === 'sms'} />
+                  <Btn kind="soft" icon="phone" title="Ouvrir les SMS (Hearo) et chercher ce patient" onClick={onSms} busy={busy === 'sms'}>SMS</Btn>
                 )}
                 <Btn kind="ghost" icon="refresh" title="Relire la fiche" onClick={onRefresh} busy={ficheState === 'loading'} />
               </div>
@@ -130,16 +163,6 @@ export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan
                 </Btn>
               </div>
             )}
-            <div class="actions" style="margin-top:8px">
-              {page !== 'opportunity' && (
-                <>
-                  <Btn kind="soft" icon="stetho" onClick={() => goTo('anamnese')}>COSI</Btn>
-                  <Btn kind="soft" icon="pen" onClick={() => goTo('commentaire')}>Anamnèse</Btn>
-                </>
-              )}
-              {page !== 'lead' && <Btn kind="soft" icon="mail" onClick={() => goTo('mails')}>Mail</Btn>}
-              {page !== 'lead' && <Btn kind="soft" icon="message" onClick={() => goTo('chat')}>Chat partenaire</Btn>}
-            </div>
             {page === 'opportunity' && hasFiche && (
               <div class="actions" style="margin-top:8px">
                 <Btn icon="coins" onClick={() => onAddSale(1)} title="Enregistre la vente dans le mois courant">Vente CAT 1</Btn>
@@ -148,7 +171,7 @@ export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan
             )}
           </div>
         )}
-      </div>
+      </div>}
     </div>
   );
 }
