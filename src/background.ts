@@ -1,4 +1,15 @@
 import type { BackgroundMessage } from './shared/messages';
+import { PLEIN_ECRAN_ID, donneesPourPleinEcran } from './shared/plein-ecran';
+
+// Cockpit Plein Écran (extension privée de Benjamin) lit les modèles, phrases et réglages : lecture seule, jamais les Ventes.
+chrome.runtime.onMessageExternal.addListener((m: { type?: string } | undefined, sender, repondre: (r: unknown) => void) => {
+  if (sender.id !== PLEIN_ECRAN_ID || m?.type !== 'cockpit-donnees') return;
+  chrome.storage.local.get('cockpit-data').then(
+    (r) => repondre({ ok: true, donnees: donneesPourPleinEcran(r['cockpit-data']) }),
+    () => repondre({ ok: false, donnees: null }),
+  );
+  return true;
+});
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
