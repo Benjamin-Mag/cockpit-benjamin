@@ -27,6 +27,8 @@ interface Props {
   ventesOuvertes: boolean;
   /** Vente CAT 1 / CAT 2 de l'Opportunité ouverte, dans le mois courant (écran Fiche). */
   onAddSale: (cat: 1 | 2) => void;
+  /** Cockpit Benjamin : chercher le patient dans Outlook (icône à côté des Ventes). */
+  onOutlook: () => void;
 }
 
 const civ = (g: 'M' | 'F' | null) => (g === 'F' ? 'Mme' : g === 'M' ? 'M.' : '');
@@ -35,7 +37,7 @@ const ago = (t: number) => {
   return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`;
 };
 
-export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan, onRevenir, onMv, onRefresh, onPaste, onSms, compact, sansCarte, onReglages, reglagesOuverts, onVentes, ventesOuvertes, onAddSale }: Props) {
+export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan, onRevenir, onMv, onRefresh, onPaste, onSms, compact, sansCarte, onReglages, reglagesOuverts, onVentes, ventesOuvertes, onAddSale, onOutlook }: Props) {
   const page = ctx?.page ?? 'other';
   const onSf = site === 'salesforce' && !!ctx;
   const hasFiche = !!fiche && !!(fiche.prenom || fiche.nom);
@@ -61,6 +63,8 @@ export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan
         )}
         <span class="grow" />
         {etat && <Btn kind="ghost" icon="refresh" class="relire" title="Relire la fiche" onClick={onRefresh} busy={etat === 'lecture'} />}
+        <button type="button" class="btn ghost icon outlook-ico" disabled={!hasFiche} onClick={onOutlook}
+          title={hasFiche ? 'Chercher le patient dans Outlook' : 'Outlook : ouvre d’abord une fiche patient'}><Icon name="mail" /></button>
         <button type="button" class={['btn', ventesOuvertes ? 'soft' : 'ghost', 'icon', 'ventes-ico'].join(' ')} title="Ventes" aria-pressed={ventesOuvertes} onClick={onVentes}><Icon name="coins" /></button>
         <button type="button" class={['btn', reglagesOuverts ? 'soft' : 'ghost', 'icon', 'roue'].join(' ')} title="Réglages" aria-pressed={reglagesOuverts} onClick={onReglages}><Icon name="settings" /></button>
       </div>

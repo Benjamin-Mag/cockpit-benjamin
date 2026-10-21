@@ -13,6 +13,7 @@ import { Commentaire } from './views/Commentaire';
 import { Header } from './views/Header';
 import { Mails } from './views/Mails';
 import { Ventes } from './views/Ventes';
+import { chercherDansOutlook } from './outlook';
 import { monthKey, monthShort } from './ventes';
 import { OrlFinder } from './views/OrlFinder';
 import { Partenaires } from './views/Partenaires';
@@ -264,6 +265,11 @@ export function App() {
   const insertMail = (subject: string, body: string, audience: 'patient' | 'partenaire') => act('mail', { type: 'insertMail', subject, html: buildMailHtml(body, data?.reglages.emailFooter ?? ''), recipient: audience === 'partenaire' ? 'Partenaire' : 'Client' });
   const ficheName = fiche ? [fiche.prenom, fiche.nom].filter(Boolean).join(' ') : '';
   const salePrefill = ficheName && ctx ? { name: ficheName, url: ctx.url.split('?')[0] } : null;
+  const rechercherOutlook = async () => {
+    if (!ficheName) return;
+    const r = await chercherDansOutlook(ficheName);
+    showToast(r.msg, r.ok ? 'ok' : 'info');
+  };
   /** Vente en un clic depuis l'Opportunité ouverte, dans le mois courant. */
   const addSaleFromFiche = (cat: 1 | 2) => {
     if (!salePrefill || !data) return;
@@ -375,7 +381,7 @@ export function App() {
     <>
       <Header site={site} ctx={ctx} fiche={fiche} ficheState={ficheState} recent={recent} busy={busy} arrierePlan={arrierePlan} onRevenir={() => void revenirSurSalesforce()} onMv={runMv} onPaste={pastePatient} onSms={openSms} onRefresh={() => setFicheTick((n) => n + 1)}
         compact={activeTab !== 'fiche' && site === 'salesforce'} sansCarte={page === 'lead' && (activeTab === 'anamnese' || activeTab === 'commentaire')} onReglages={() => basculer('reglages')} reglagesOuverts={activeTab === 'reglages'}
-        onVentes={() => basculer('ventes')} ventesOuvertes={activeTab === 'ventes'} onAddSale={addSaleFromFiche} />
+        onVentes={() => basculer('ventes')} ventesOuvertes={activeTab === 'ventes'} onAddSale={addSaleFromFiche} onOutlook={() => void rechercherOutlook()} />
       {storage.sync === 'paused' && !silence && aCopier && (
         <div class="banner" style="margin:8px 12px 0">
           <Icon name="folder" />

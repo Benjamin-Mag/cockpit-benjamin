@@ -349,7 +349,7 @@ input[type="date"], input[type="time"] { cursor: pointer; }
 .toast { bottom: 78px; }
 .footer:not(:empty) ~ .barre ~ .toast { bottom: 144px; }
 #app:has(.view.editeur) .toast { bottom: 14px; }
-#app:has(.view.editeur) .roue, #app:has(.view.editeur) .relire, #app:has(.view.editeur) .ventes-ico { visibility: hidden; }
+#app:has(.view.editeur) .roue, #app:has(.view.editeur) .relire, #app:has(.view.editeur) .ventes-ico, #app:has(.view.editeur) .outlook-ico { visibility: hidden; }
 /* Catégorie d'une vente : cliquable pour corriger une erreur (CAT 1 ⇄ CAT 2). */
 .badge-bouton { cursor: pointer; font-family: inherit; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
 .badge-bouton:hover { box-shadow: 0 0 0 3px var(--accent-soft); }
