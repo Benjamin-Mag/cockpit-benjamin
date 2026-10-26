@@ -12,6 +12,9 @@ export default defineConfig({
   publicDir: here('./public'),
   plugins: [preact()],
   define: { __COCKPIT_BUILD__: JSON.stringify(process.env.COCKPIT_BUILD_ID ?? 'dev') },
+  // pdf.js (lecture de la Facture client) n'est chargé qu'au clic : servi tel quel en aperçu, sinon Vite le découvre
+  // en cours de route et recharge la page.
+  optimizeDeps: { exclude: ['pdfjs-dist'] },
   build: {
     outDir: here('./dist'),
     emptyOutDir: true,
