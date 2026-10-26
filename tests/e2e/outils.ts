@@ -15,6 +15,8 @@ export interface Scenario {
   ficheSansGenre?: boolean;
   /** Cockpit Benjamin : un onglet Outlook web déjà ouvert. */
   ongletOutlook?: boolean;
+  /** Cockpit Benjamin : fichier attaché à « Facture client » sur l'Opportunité (voir factures-fictives.ts) ; absent = pas de facture. */
+  factureClient?: { extension?: string; base64: string };
   /** La Piste se lit vide (Salesforce encore en train de se dessiner) ; modifiable en cours de test. */
   ficheVide?: boolean;
   doctolibBloque?: boolean;

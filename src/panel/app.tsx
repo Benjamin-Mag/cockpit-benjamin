@@ -14,6 +14,9 @@ import { Header } from './views/Header';
 import { Mails } from './views/Mails';
 import { Ventes } from './views/Ventes';
 import { chercherDansOutlook } from './outlook';
+import { lireCategorieFacture } from './facture-sf';
+import { messageVente } from '../facture/categorie';
+import type { EtatFacture } from './views/Header';
 import { monthKey, monthShort } from './ventes';
 import { OrlFinder } from './views/OrlFinder';
 import { Partenaires } from './views/Partenaires';
@@ -65,6 +68,7 @@ export function App() {
   const [recent, setRecent] = useState<RecentPatient[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToastState] = useState<ToastMsg | null>(null);
+  const [facture, setFacture] = useState<EtatFacture | null>(null);
   const [footerEl, setFooterEl] = useState<HTMLElement | null>(null);
   /** Onglet Salesforce gardé pendant que l'utilisateur regarde un autre site (recherche internet…). */
   const [arrierePlan, setArrierePlan] = useState(false);
@@ -270,13 +274,44 @@ export function App() {
     const r = await chercherDansOutlook(ficheName);
     showToast(r.msg, r.ok ? 'ok' : 'info');
   };
-  /** Vente en un clic depuis l'Opportunité ouverte, dans le mois courant. */
+  /** Vente de l'Opportunité ouverte, dans le mois courant, une seule fois par fiche. false si elle y était déjà. */
+  const enregistrerVente = (cat: 1 | 2, aVerifier?: string): boolean => {
+    if (!salePrefill || !data) return false;
+    const key = monthKey(new Date());
+    if ((data.ventes.sales[key] ?? []).some((s) => s.url === salePrefill.url)) { showToast(`${salePrefill.name} est déjà dans les ventes de ${monthShort(key)}`, 'info'); return false; }
+    update((d) => {
+      const liste = (d.ventes.sales[key] ??= []);
+      if (!liste.some((s) => s.url === salePrefill.url)) liste.push({ name: salePrefill.name, cat, url: salePrefill.url, ...(aVerifier ? { aVerifier } : {}) });
+    });
+    return true;
+  };
+  /** Repli quand la facture ne dit rien : la catégorie choisie à la main. */
   const addSaleFromFiche = (cat: 1 | 2) => {
-    if (!salePrefill || !data) return;
+    if (!enregistrerVente(cat)) return;
+    setFacture(null);
+    showToast(`Vente CAT ${cat} ajoutée : ${salePrefill!.name} (${monthShort(monthKey(new Date()))})`, 'ok');
+  };
+  /** « Enregistrer la facture » : Facture client lue par les données Salesforce, catégorie déduite, vente enregistrée. */
+  const factureEnCours = useRef(false);
+  const enregistrerFacture = async () => {
+    if (!salePrefill || !data || !ctx || ctx.page !== 'opportunity' || factureEnCours.current) return;
     const key = monthKey(new Date());
     if ((data.ventes.sales[key] ?? []).some((s) => s.url === salePrefill.url)) { showToast(`${salePrefill.name} est déjà dans les ventes de ${monthShort(key)}`, 'info'); return; }
-    update((d) => { (d.ventes.sales[key] ??= []).push({ name: salePrefill.name, cat, url: salePrefill.url }); });
-    showToast(`Vente CAT ${cat} ajoutée : ${salePrefill.name} (${monthShort(key)})`, 'ok');
+    factureEnCours.current = true;
+    const url = salePrefill.url;
+    setFacture({ url, etat: 'lecture' });
+    const debut = Date.now();
+    try {
+      const r = await lireCategorieFacture(ctx.url, ctx.recordId);
+      // Un état de lecture trop bref clignote : il reste au moins le temps de l'animation.
+      await new Promise((ok) => setTimeout(ok, Math.max(0, 320 - (Date.now() - debut))));
+      if (!r.ok) { setFacture({ url, etat: 'echec', msg: r.msg }); return; }
+      setFacture(null);
+      const { cat, sure, raison } = r.categorie;
+      if (enregistrerVente(cat, sure ? undefined : raison)) showToast(messageVente(r.categorie), sure ? 'ok' : 'info');
+    } finally {
+      factureEnCours.current = false;
+    }
   };
   /** Lecture complète de la fiche (partenaire + adresse via le survol du lien Compte, ~2 s). */
   const readPartner = async (): Promise<Fiche | null> => {
@@ -381,7 +416,8 @@ export function App() {
     <>
       <Header site={site} ctx={ctx} fiche={fiche} ficheState={ficheState} recent={recent} busy={busy} arrierePlan={arrierePlan} onRevenir={() => void revenirSurSalesforce()} onMv={runMv} onPaste={pastePatient} onSms={openSms} onRefresh={() => setFicheTick((n) => n + 1)}
         compact={activeTab !== 'fiche' && site === 'salesforce'} sansCarte={page === 'lead' && (activeTab === 'anamnese' || activeTab === 'commentaire')} onReglages={() => basculer('reglages')} reglagesOuverts={activeTab === 'reglages'}
-        onVentes={() => basculer('ventes')} ventesOuvertes={activeTab === 'ventes'} onAddSale={addSaleFromFiche} onOutlook={() => void rechercherOutlook()} />
+        onVentes={() => basculer('ventes')} ventesOuvertes={activeTab === 'ventes'} onAddSale={addSaleFromFiche} onOutlook={() => void rechercherOutlook()}
+        onFacture={() => void enregistrerFacture()} facture={facture && facture.url === salePrefill?.url ? facture : null} />
       {storage.sync === 'paused' && !silence && aCopier && (
         <div class="banner" style="margin:8px 12px 0">
           <Icon name="folder" />
