@@ -25,19 +25,25 @@ interface Props {
   /** Cockpit Benjamin : l'écran Ventes s'ouvre par l'icône € à côté de la roue. */
   onVentes: () => void;
   ventesOuvertes: boolean;
-  /** Vente CAT 1 / CAT 2 de l'Opportunité ouverte, dans le mois courant (écran Fiche). */
+  /** « Enregistrer la facture » : lit la Facture client de l'Opportunité et enregistre la vente avec sa catégorie (écran Fiche). */
+  onFacture: () => void;
+  facture: EtatFacture | null;
+  /** Repli quand la facture ne dit rien : vente CAT 1 / CAT 2 choisie à la main, dans le mois courant. */
   onAddSale: (cat: 1 | 2) => void;
   /** Cockpit Benjamin : chercher le patient dans Outlook (icône à côté des Ventes). */
   onOutlook: () => void;
 }
 
-const civ = (g: 'M' | 'F' | null) => (g === 'F' ? 'Mme' : g === 'M' ? 'M.' : '');
+/** Lecture de la Facture client en cours, ou échec avec son message (le repli CAT 1 / CAT 2 s'affiche alors). */
+export type EtatFacture = { url: string; etat: 'lecture' } | { url: string; etat: 'echec'; msg: string };
+
+const civ =(g: 'M' | 'F' | null) => (g === 'F' ? 'Mme' : g === 'M' ? 'M.' : '');
 const ago = (t: number) => {
   const m = Math.round((Date.now() - t) / 60000);
   return m < 1 ? "à l'instant" : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.round(m / 60)} h` : `il y a ${Math.round(m / 1440)} j`;
 };
 
-export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan, onRevenir, onMv, onRefresh, onPaste, onSms, compact, sansCarte, onReglages, reglagesOuverts, onVentes, ventesOuvertes, onAddSale, onOutlook }: Props) {
+export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan, onRevenir, onMv, onRefresh, onPaste, onSms, compact, sansCarte, onReglages, reglagesOuverts, onVentes, ventesOuvertes, onFacture, facture, onAddSale, onOutlook }: Props) {
   const page = ctx?.page ?? 'other';
   const onSf = site === 'salesforce' && !!ctx;
   const hasFiche = !!fiche && !!(fiche.prenom || fiche.nom);
@@ -168,10 +174,24 @@ export function Header({ site, ctx, fiche, ficheState, recent, busy, arrierePlan
               </div>
             )}
             {page === 'opportunity' && hasFiche && (
-              <div class="actions" style="margin-top:8px">
-                <Btn icon="coins" onClick={() => onAddSale(1)} title="Enregistre la vente dans le mois courant">Vente CAT 1</Btn>
-                <Btn icon="coins" onClick={() => onAddSale(2)} title="Enregistre la vente dans le mois courant">Vente CAT 2</Btn>
-              </div>
+              <>
+                <div class="actions" style="grid-template-columns:1fr;margin-top:8px">
+                  <Btn icon="coins" class={facture?.etat === 'lecture' ? 'lecture-facture' : ''} busy={facture?.etat === 'lecture'} onClick={onFacture}
+                    title="Lit la Facture client de l'Opportunité, en déduit la catégorie (CAT 1 ou CAT 2) et enregistre la vente dans le mois courant">
+                    {facture?.etat === 'lecture' ? 'Lecture de la facture…' : 'Enregistrer la facture'}
+                  </Btn>
+                </div>
+                {facture?.etat === 'echec' && (
+                  <div class="facture-repli" role="status">
+                    <span>{facture.msg}</span>
+                    <span class="liens">
+                      <button type="button" class="lien" onClick={() => onAddSale(1)}>Enregistrer en CAT 1</button>
+                      <span aria-hidden="true">·</span>
+                      <button type="button" class="lien" onClick={() => onAddSale(2)}>Enregistrer en CAT 2</button>
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

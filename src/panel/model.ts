@@ -30,7 +30,8 @@ export interface Reglages {
   sigPartenaireMail: string;
 }
 
-export interface Vente { name: string; cat: 1 | 2; url?: string }
+/** `aVerifier` : catégorie déduite du prix des appareils (facture sans code ni mention de classe), raison gardée pour le survol. */
+export interface Vente { name: string; cat: 1 | 2; url?: string; aVerifier?: string }
 export interface Payslip {
   onglet?: string; ficheMonth: string; brut: number; primes: number; cotisations: number; indemnites: number;
   autresRetenues: number; prelevementSource: number; netAvantImpot: number; netApayer: number; netSocial: number; includeInAverage: boolean;

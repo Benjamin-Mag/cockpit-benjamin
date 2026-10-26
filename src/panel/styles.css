@@ -356,3 +356,13 @@ input[type="date"], input[type="time"] { cursor: pointer; }
 .badge-bouton { cursor: pointer; font-family: inherit; transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
 .badge-bouton:hover { box-shadow: 0 0 0 3px var(--accent-soft); }
 .badge-bouton:active { transform: scale(0.94); }
+/* « Enregistrer la facture » (Cockpit Benjamin) : lecture qui respire doucement, repli discret quand la facture ne dit rien. */
+.btn.lecture-facture:disabled { opacity: 0.8; animation: lecture-facture 1.6s var(--ease) infinite; }
+@keyframes lecture-facture { 50% { opacity: 0.6; } }
+.facture-repli { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; font-size: 12px; color: var(--muted); animation: rise var(--dur-slow) var(--ease); }
+.facture-repli .liens { display: flex; gap: 6px; align-items: center; color: var(--faint); }
+.lien { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--accent-soft-2); transition: color var(--dur) var(--ease), text-decoration-color var(--dur) var(--ease); }
+.lien:hover { color: var(--accent-strong); text-decoration-color: currentColor; }
+/* Vente dont la catégorie vient du prix des appareils : à vérifier sur la facture. */
+.a-verifier { display: inline-flex; align-items: center; gap: 3px; font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1.4; padding: 1px 6px; border-radius: 999px; background: transparent; color: var(--warn); border: 1px dashed currentColor; cursor: pointer; white-space: nowrap; transition: background var(--dur) var(--ease); }
+.a-verifier:hover { background: var(--warn-soft); }

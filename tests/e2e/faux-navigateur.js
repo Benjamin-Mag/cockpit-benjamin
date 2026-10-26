@@ -227,5 +227,31 @@
     };
   }
 
+  // ------------------------------------------------------------------ Salesforce par les données (Cockpit Benjamin)
+  // « Enregistrer la facture » : liste des documents de l'Opportunité, fichier, téléchargement. Chaque appel est noté (api 'salesforce').
+  // `factureClient` : { extension, base64 } du fichier attaché à « Facture client » ; absent = aucune facture attachée.
+  const vraiFetch = window.fetch.bind(window);
+  const jsonSf = (o) => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json;charset=UTF-8' } });
+  const champ = (v) => ({ value: v, displayValue: null });
+  window.fetch = async (entree, init) => {
+    const url = typeof entree === 'string' ? entree : entree instanceof URL ? entree.href : entree.url;
+    if (!/^https:\/\/[^/]+\.force\.com\//.test(url)) return vraiFetch(entree, init);
+    note('salesforce', init?.method || 'GET', url);
+    const chemin = new URL(url).pathname;
+    const f = S.factureClient;
+    if (/\/ui-api\/related-list-records\/[^/]+\/Needed_Document_Relations_Opportunity__r$/.test(chemin)) {
+      const lignes = [{ fields: { Needed_Document_Name__c: champ('Devis'), Last_Attachment_Id__c: champ('069TEST0000DEVIS') } }];
+      lignes.push({ fields: { Needed_Document_Name__c: champ('Facture client'), Last_Attachment_Id__c: champ(f ? '069TEST000FACTURE' : null) } });
+      return jsonSf({ records: lignes });
+    }
+    if (f && /\/ui-api\/records\/069TEST000FACTURE$/.test(chemin)) {
+      return jsonSf({ id: '069TEST000FACTURE', fields: { Title: champ('Facture client'), FileExtension: champ(f.extension ?? 'pdf'), LatestPublishedVersionId: champ('068TEST000FACTURE'), ContentSize: champ(2048) } });
+    }
+    if (f && /\/sfc\/servlet\.shepherd\/version\/download\/068TEST000FACTURE$/.test(chemin)) {
+      return new Response(Uint8Array.from(atob(f.base64), (c) => c.charCodeAt(0)), { status: 200, headers: { 'content-type': 'application/pdf' } });
+    }
+    return new Response('[]', { status: 404, headers: { 'content-type': 'application/json' } });
+  };
+
   window.__mock = { activer, onglets, local, session, FICHES, ports };
 })();

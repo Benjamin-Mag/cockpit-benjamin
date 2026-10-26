@@ -137,7 +137,7 @@ export function mergeVentes(data: AppData, raw: unknown): AppData {
       for (const s of list) {
         if (!s || typeof s.name !== 'string') continue;
         const cat = s.cat === 2 ? 2 : 1;
-        if (!target.some((t) => t.name === s.name && t.cat === cat)) target.push({ name: s.name, cat, ...(s.url ? { url: s.url } : {}) });
+        if (!target.some((t) => t.name === s.name && t.cat === cat)) target.push({ name: s.name, cat, ...(s.url ? { url: s.url } : {}), ...(typeof s.aVerifier === 'string' && s.aVerifier ? { aVerifier: s.aVerifier } : {}) });
       }
     }
   }
