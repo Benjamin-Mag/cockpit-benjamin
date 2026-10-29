@@ -27,6 +27,9 @@ export const FACTURE_P1 = FACTURE_P2.map((l) => l
   .replace('P2D', 'P1D').replace('P2G', 'P1G').replace('2392530', '2351057').replace('2341840', '2365119')
   .replace(/1 690,00/g, '950,00').replace('3 345,97', '1 942,99').replace('184,03', '107,01').replace('3 530,00', '2 050,00'));
 
+/** Facture CSS (fictive) : codes P2D / P2G, mais appareils à 800 € : CAT 1 dans Cockpit Benjamin (règle du 29/10/2026). */
+export const FACTURE_CSS_800 = FACTURE_P2.map((l) => l.replace(/1 690,00/g, '800,00').replace('3 345,97', '1 516,59').replace('184,03', '83,41').replace('3 530,00', '1 600,00'));
+
 /** Codes LPP seuls (pas de code de regroupement) : classe II par le code LPP. */
 export const FACTURE_LPP = FACTURE_P2.map((l) => l.replace(/\s+CODE RGPT : P2[DG]/, ''));
 

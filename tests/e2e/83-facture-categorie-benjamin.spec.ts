@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { categorieDeFacture, messageVente } from '../../src/facture/categorie';
 import { extraireFacture } from '../../src/facture/facture';
 import { type PdfJsLike, lignesDuPdf } from '../../src/facture/pdf-lignes';
-import { FACTURE_LPP, FACTURE_MENTION, FACTURE_P1, FACTURE_P2, FACTURE_PRIX_BAS, FACTURE_PRIX_HAUT, FACTURE_SANS_APPAREIL, pdfFictif } from './factures-fictives';
+import { FACTURE_CSS_800, FACTURE_LPP, FACTURE_MENTION, FACTURE_P1, FACTURE_P2, FACTURE_PRIX_BAS, FACTURE_PRIX_HAUT, FACTURE_SANS_APPAREIL, pdfFictif } from './factures-fictives';
 
 // Cockpit Benjamin, « Enregistrer la facture » : la catégorie de la vente lue sur des factures fictives (fonctions pures, sans panneau).
 const categorie = (lignes: string[]) => categorieDeFacture(extraireFacture(lignes));
@@ -24,6 +24,13 @@ test.describe('Catégorie d\'après la facture (Cockpit Benjamin)', () => {
     expect(categorie(FACTURE_PRIX_HAUT)).toEqual({ cat: 2, sure: false, raison: 'prix des appareils >\u00a0950\u00a0€' });
     expect(categorie(FACTURE_PRIX_BAS)).toEqual({ cat: 1, sure: false, raison: 'prix des appareils ≤\u00a0950\u00a0€' });
     expect(messageVente(categorie(FACTURE_PRIX_HAUT)!)).toBe('Vente CAT 2 enregistrée (prix des appareils >\u00a0950\u00a0€, à vérifier)');
+  });
+
+  test('appareils à 950 € ou moins : CAT 1 même avec un code P2 (factures CSS à 800 €, 29/10/2026)', () => {
+    expect(categorie(FACTURE_CSS_800)).toEqual({ cat: 1, sure: true, raison: 'appareils à 800\u00a0€ (≤\u00a0950\u00a0€), code de classe II de la facture ignoré' });
+    // Au-dessus de 950 €, le code décide toujours : P2 reste CAT 2, P1 reste CAT 1 même si un chargeur fait monter le prix lu.
+    expect(categorie(FACTURE_P2)?.cat).toBe(2);
+    expect(categorie(FACTURE_P1.map((l) => l.replace(/950,00/g, '1 050,00')))).toEqual({ cat: 1, sure: true, raison: 'facture : code P1' });
   });
 
   test('sans appareil ni texte : pas de catégorie, rien d\'inventé', () => {
