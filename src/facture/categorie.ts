@@ -5,13 +5,21 @@ export interface CategorieFacture { cat: 1 | 2; sure: boolean; raison: string }
 
 /**
  * null : la facture ne dit rien de la classe (ni code, ni mention, ni code LPP, ni prix d'appareil).
- * Appareils à 950 € ou moins : toujours CAT 1, même avec un code P2 (29/10/2026, Benjamin : les factures CSS à 800 €
- * portent P2D / P2G et passaient en CAT 2). Au-dessus de 950 €, le code ou la mention décide d'abord : un chargeur
- * compté avec l'appareil ne fait pas passer une facture P1 en CAT 2.
+ * Code P2 mais facture CSS (mention CSS / C2S, ou appareils payés 800 €) aux appareils à 950 € ou moins, ou appareils
+ * à 950 € pile (prix d'une classe I) : CAT 1 (29/10/2026, Benjamin : elles portaient P2D / P2G et passaient en CAT 2 ;
+ * vu sur 1 226 factures : 40 cas, tous CSS). Toujours le prix catalogue : une CAT 2 remisée (1 390 € payés 950 €) garde
+ * son prix au-dessus de 950 € et reste CAT 2 ; une CAT 2 qui n'imprimerait que son prix remisé ne passe pas non plus,
+ * sauf à 950 € pile. Au-dessus de 950 €, le code ou la mention décide d'abord : un chargeur compté avec l'appareil ne
+ * fait pas passer une facture P1 en CAT 2.
  */
-export function categorieDeFacture(ex: Pick<Extraction, 'classe' | 'classeSource' | 'prixAppareil'>): CategorieFacture | null {
-  if (ex.prixAppareil > 0 && ex.prixAppareil <= 950 && ex.classe === '2' && ex.classeSource !== 'prix') {
-    return { cat: 1, sure: true, raison: `appareils à ${ex.prixAppareil.toLocaleString('fr-FR')}\u00a0€ (≤\u00a0950\u00a0€), code de classe II de la facture ignoré` };
+export function categorieDeFacture(ex: Pick<Extraction, 'classe' | 'classeSource' | 'prixAppareil' | 'mentionCss' | 'appareils'>): CategorieFacture | null {
+  const payes = ex.appareils.map((a) => a.prixUnitaire ?? 0).filter((p) => p > 0);
+  const css = ex.mentionCss || payes.some((p) => Math.round(p) === 800);
+  const prixClasseI = Math.round(ex.prixAppareil) === 950;
+  if ((css || prixClasseI) && ex.prixAppareil > 0 && ex.prixAppareil <= 950 && ex.classe === '2' && ex.classeSource !== 'prix') {
+    const prix = payes.length ? Math.max(...payes) : ex.prixAppareil;
+    const raison = css ? `facture CSS, appareils à ${prix.toLocaleString('fr-FR')}\u00a0€` : 'appareils à 950\u00a0€ (prix de classe I)';
+    return { cat: 1, sure: true, raison: `${raison} : code de classe II ignoré` };
   }
   if (ex.classe !== '1' && ex.classe !== '2') return null;
   const cat = ex.classe === '1' ? 1 : 2;

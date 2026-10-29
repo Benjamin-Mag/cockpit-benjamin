@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { categorieDeFacture, messageVente } from '../../src/facture/categorie';
 import { extraireFacture } from '../../src/facture/facture';
 import { type PdfJsLike, lignesDuPdf } from '../../src/facture/pdf-lignes';
-import { FACTURE_CSS_800, FACTURE_LPP, FACTURE_MENTION, FACTURE_P1, FACTURE_P2, FACTURE_PRIX_BAS, FACTURE_PRIX_HAUT, FACTURE_SANS_APPAREIL, pdfFictif } from './factures-fictives';
+import { FACTURE_C2S_950, FACTURE_CSS_800, FACTURE_LPP, FACTURE_P2_900, FACTURE_P2_950, FACTURE_MENTION, FACTURE_P1, FACTURE_P2, FACTURE_PRIX_BAS, FACTURE_PRIX_HAUT, FACTURE_SANS_APPAREIL, pdfFictif } from './factures-fictives';
 
 // Cockpit Benjamin, « Enregistrer la facture » : la catégorie de la vente lue sur des factures fictives (fonctions pures, sans panneau).
 const categorie = (lignes: string[]) => categorieDeFacture(extraireFacture(lignes));
@@ -26,8 +26,14 @@ test.describe('Catégorie d\'après la facture (Cockpit Benjamin)', () => {
     expect(messageVente(categorie(FACTURE_PRIX_HAUT)!)).toBe('Vente CAT 2 enregistrée (prix des appareils >\u00a0950\u00a0€, à vérifier)');
   });
 
-  test('appareils à 950 € ou moins : CAT 1 même avec un code P2 (factures CSS à 800 €, 29/10/2026)', () => {
-    expect(categorie(FACTURE_CSS_800)).toEqual({ cat: 1, sure: true, raison: 'appareils à 800\u00a0€ (≤\u00a0950\u00a0€), code de classe II de la facture ignoré' });
+  test('facture CSS aux appareils à 950 € ou moins : CAT 1 même avec un code P2 (29/10/2026)', () => {
+    // Payée 800 € (le prix CSS) ou mention C2S : CAT 1.
+    expect(categorie(FACTURE_CSS_800)).toEqual({ cat: 1, sure: true, raison: 'facture CSS, appareils à 800\u00a0€ : code de classe II ignoré' });
+    expect(categorie(FACTURE_C2S_950)).toEqual({ cat: 1, sure: true, raison: 'facture CSS, appareils à 950\u00a0€ : code de classe II ignoré' });
+    // Appareils à 950 € pile : le prix d'une classe I, CAT 1 (Benjamin : « les AA à 950, c'est CAT 1 aussi »).
+    expect(categorie(FACTURE_P2_950)).toEqual({ cat: 1, sure: true, raison: 'appareils à 950 € (prix de classe I) : code de classe II ignoré' });
+    // P2 à 900 € sans rien qui dise CSS (prix déjà remisé, catalogue absent) : le code décide, CAT 2.
+    expect(categorie(FACTURE_P2_900)).toEqual({ cat: 2, sure: true, raison: 'facture : code P2' });
     // Au-dessus de 950 €, le code décide toujours : P2 reste CAT 2, P1 reste CAT 1 même si un chargeur fait monter le prix lu.
     expect(categorie(FACTURE_P2)?.cat).toBe(2);
     expect(categorie(FACTURE_P1.map((l) => l.replace(/950,00/g, '1 050,00')))).toEqual({ cat: 1, sure: true, raison: 'facture : code P1' });

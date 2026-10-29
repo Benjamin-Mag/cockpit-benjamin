@@ -13,7 +13,7 @@
  *  - tableau récapitulatif de TVA (« 1800.94  1900.00  5.5 %  99.06 ») quand aucun « Total TTC » n'est écrit.
  *
  * Cockpit Benjamin : copie du moteur de Cockpit Factures 0.7.2 (src/extraction/ et src/shared/referentiel.ts), à recopier tel quel
- * quand il évolue. Seuls changements : chemins d'import, `classeSource` et `prixAppareil`.
+ * quand il évolue. Seuls changements : chemins d'import, `classeSource`, `prixAppareil` et `mentionCss`.
  */
 import {
   ACCESSOIRES, CODE_REGROUPEMENT, ENSEIGNES, FORMES, GARANTIE_ACCESSOIRE, GARANTIE_APPAREIL, IX_INSTANT_FIT, LIGNE_APPAREIL, LIGNE_PAS_APPAREIL, LPP_CLASSE, LPP_COTE,
@@ -77,6 +77,8 @@ export interface Extraction {
   classeSource: ClasseSource;
   /** Cockpit Benjamin : prix TTC catalogue du plus cher des appareils (0 s'il ne se lit pas), pour la règle « ≤ 950 € → CAT 1 ». */
   prixAppareil: number;
+  /** Cockpit Benjamin : la facture parle de Complémentaire santé solidaire (CSS, C2S, ancienne CMU). */
+  mentionCss: boolean;
   appareillage: Appareillage;
   totalAppareils: number | null;
   emetteurCle: string;
@@ -363,6 +365,7 @@ export function extraireFacture(lignesBrutes: string[], regles: RegleApprise[] =
   }
 
   const prixAppareil = Math.max(0, ...appareils.map((a) => a.prixClasse).filter((p) => p > 0));
+  const mentionCss = /\bC\.?S\.?S\b|\bC2S\b|compl[ée]mentaire\s+sant[ée]\s+solidaire|\bCMU/i.test(texteTout);
 
   // ── Appareillage (mono / bi) ──────────────────────────────────────────────
   let appareillage: Appareillage = '';
@@ -403,7 +406,7 @@ export function extraireFacture(lignesBrutes: string[], regles: RegleApprise[] =
   return {
     champs, preuves,
     appareils: appareils.map(({ texteComplet: _t, formeBase: _f, ctx: _c, prixClasse: _p, prixNet: _n, prixNetSur: _s, ...a }) => a),
-    nbAppareils, marque, forme, niveau, plateforme, accessoires, classe, classeSure, classeSource, prixAppareil, appareillage, totalAppareils, emetteurCle, lignes,
+    nbAppareils, marque, forme, niveau, plateforme, accessoires, classe, classeSure, classeSource, prixAppareil, mentionCss, appareillage, totalAppareils, emetteurCle, lignes,
     niveauHorsListe, chargeurSurFacture, rechargeable,
   };
 }
